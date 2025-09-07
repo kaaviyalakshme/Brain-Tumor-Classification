@@ -1,33 +1,25 @@
 $(document).ready(function () {
-    // Init
-    $('.image-section').hide();
-    $('.loader').hide();
-    $('#result').hide();
-    function readURL(input) {
-        if (input.files && input.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                $('#imagePreview').attr( 'src', e.target.result );
-            }
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
+
+    // Image preview
     $("#imageUpload").change(function () {
-        $('.image-section').show();
-        $('#btn-predict').show();
-        $('#result').text('');
-        $('#result').hide();
-        readURL(this);
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            $('#imagePreview').attr('src', e.target.result);
+            $('.image-section').show();
+        };
+        reader.readAsDataURL(this.files[0]);
     });
-    // Predict
-    $('#btn-predict').click(function () {
-        var form_data = new FormData($('#upload-file')[0]);
 
-        // Show loading animation
-        $(this).hide();
-        $('.loader').show();
+    // Predict button
+    $("#btn-predict").click(function () {
+        let form_data = new FormData($('#upload-file')[0]);
 
-        // Make prediction by calling api /predict
+        // Reset UI
+        $("#btn-predict").removeClass("safe danger").text("Predicting...");
+        $("#result span").removeClass("result-no result-yes").text("");
+        $(".loader").show();
+
+        // Send request
         $.ajax({
             type: 'POST',
             url: '/predict',
@@ -35,13 +27,28 @@ $(document).ready(function () {
             contentType: false,
             cache: false,
             processData: false,
-            async: true,
             success: function (data) {
-                // Get and display the result
-                $('.loader').hide();
-                $('#result').fadeIn(600);
-                $('#result').text(' Result:  ' + data);
-                console.log('Success!');
+                $(".loader").hide();
+
+                if (data.includes("No Brain Tumor")) {
+                    $("#result span")
+                        .text("No Brain Tumor")
+                        .addClass("result-no")
+                        .removeClass("result-yes");
+                    $("#btn-predict")
+                        .addClass("safe")
+                        .removeClass("danger")
+                        .text("All Clear ✅");
+                } else {
+                    $("#result span")
+                        .text("Yes Brain Tumor")
+                        .addClass("result-yes")
+                        .removeClass("result-no");
+                    $("#btn-predict")
+                        .addClass("danger")
+                        .removeClass("safe")
+                        .text("Tumor Detected ⚠️");
+                }
             },
         });
     });
